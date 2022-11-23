@@ -4,7 +4,6 @@ import asyncio
 import socket
 import sys
 import re
-import time
 import typing
 from concurrent.futures import ThreadPoolExecutor
 from ipaddress import IPv4Address
@@ -77,40 +76,6 @@ def is_ip_available(ip: IPv4Address) -> bool:
 def check_ip_availability(ip: IPv4Address):
     if is_ip_available(ip):
         available_ip.add(ip)
-        #print(f"-> {Colors.OKGREEN}Host \t{ip}\t is available {Colors.ENDC}")
-
-
-def main_sync():
-    ip_range = read_ip_range()
-    available_ip = []
-    unavailable_ip = []
-    start = time.time()
-    for ip in ip_range:
-        if is_ip_available(ip):
-            available_ip.append(ip)
-        else:
-            unavailable_ip.append(ip)
-    print(f"Time: {(time.time() - start)}")
-    print("\n", "-" * 50, sep='')
-    if available_ip:
-        for ip in available_ip:
-            print(f"-> {Colors.OKGREEN}Host \t{ip}\t is available {Colors.ENDC}")
-    else:
-        print(f"{Colors.FAIL} Thera are not available hosts {Colors.ENDC}")
-    print("-" * 50, "\n")
-
-
-async def main_async():
-    ip_range = read_ip_range()
-    tasks = [asyncio.create_task(check_ip_availability(ip)) for ip in ip_range]
-    start = time.time()
-    await asyncio.wait(tasks)
-    print(f"Time: {(time.time() - start)}")
-    if available_ip:
-        for ip in sorted(available_ip):
-            print(f"-> {Colors.OKGREEN}Host \t{ip}\t is available {Colors.ENDC}")
-    else:
-        print(f"{Colors.FAIL} Thera are not available hosts {Colors.ENDC}")
 
 
 def main_threading():
