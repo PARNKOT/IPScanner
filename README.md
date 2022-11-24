@@ -1,4 +1,4 @@
 # IPScanner   
    
-  To install ipscanner change working directory on <script_directory> and run:    
+  Move IPScanner directory to your <home directory> and run:    
   > ./install.sh
