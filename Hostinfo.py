@@ -22,6 +22,15 @@ class Hostinfo:
         self.ports = set()
         self.status = None
 
+    def print(self):
+        color_header = Colors.HEADER
+        print(f"{color_header}Host{Colors.ENDC}: {self.ipv4},  "
+              f"{color_header}Port{Colors.ENDC}: {self.ports},  "
+              f"{color_header}name{Colors.ENDC}: {self.name},  "
+              f"{color_header}MAC{Colors.ENDC}: {self.mac},  "
+              f"{color_header}Vendor{Colors.ENDC}: {self.manufacturer[:20]},  "
+              f"{color_header}Status{Colors.ENDC}: {Colors.OKGREEN}{self.status}{Colors.ENDC}")
+
     def __str__(self):
         if self.status.lower() == "ok":
             return f"{self.ipv4}\t{self.ports}\t\t{self.name}\t\t{self.mac}\t{self.manufacturer[:20]}\t" \
