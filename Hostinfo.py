@@ -19,12 +19,11 @@ class Hostinfo:
         self.name = name
         self.mac = mac
         self.manufacturer = "<unknown>"
-        self.ports = []
+        self.ports = set()
         self.status = None
 
     def __str__(self):
         if self.status.lower() == "ok":
-            #return f"{self.ipv4}, {self.name}, {self.mac}, {self.manufacturer}, {Colors.OKGREEN}{self.status}{Colors.ENDC}"
             return f"{self.ipv4}\t{self.ports}\t\t{self.name}\t\t{self.mac}\t{self.manufacturer[:20]}\t" \
                    f"{Colors.OKGREEN}{self.status}{Colors.ENDC}"
         else:
