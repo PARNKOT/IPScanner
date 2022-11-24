@@ -1,15 +1,18 @@
 #!/usr/bin/python3
 
-import asyncio
 import socket
-import sys
 import re
 import typing
+import optparse
 from concurrent.futures import ThreadPoolExecutor
 from ipaddress import IPv4Address
 
+import getmac
+from mac_vendor_lookup import MacLookup
+from Hostinfo import Hostinfo
 
-available_ip = set()
+hosts = set()
+port_to_scan = 22
 
 
 class Colors:
@@ -24,9 +27,9 @@ class Colors:
     UNDERLINE = '\033[4m'
 
 
-def read_ip_range() -> set:
-    if len(sys.argv) > 1:
-        return parse_ip(sys.argv[1].replace(' ', ''))
+def read_ip_range(args) -> set:
+    if args:
+        return parse_ip(args[0].replace(' ', ''))
     else:
         return parse_ip(input("IP range to scan: ").replace(' ', ''))
 
@@ -67,28 +70,74 @@ def validate_ip(ip_list: typing.Iterable) -> bool:
 
 
 def is_ip_available(ip: IPv4Address) -> bool:
+    global port_to_scan
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socket.setdefaulttimeout(1)
-    result = sock.connect_ex((str(ip), 22))
+    result = sock.connect_ex((str(ip), port_to_scan))
     return not result
 
 
-def check_ip_availability(ip: IPv4Address):
+def process(ip: IPv4Address):
+    try:
+        hosts.add(get_host_info(ip))
+    except:
+        pass
+
+
+def get_host_info(ip: IPv4Address):
     if is_ip_available(ip):
-        available_ip.add(ip)
+        host = Hostinfo(ip)
+        try:
+            host.name = socket.gethostbyaddr(str(ip))[0]
+        except Exception as e:
+            pass
+        host.mac = get_mac_by_addr(ip)
+        host.manufacturer = get_manufacturer_by_addr(host.mac)
+        host.ports.append(port_to_scan)
+        host.status = "ok"
+
+        return host
+
+    raise Exception(f"Host {ip} is not available")
+
+
+def get_mac_by_addr(ip: IPv4Address) -> str:
+    mac = getmac.get_mac_address(ip=str(ip))
+    return mac if mac else "<unknown>"
+
+
+def get_manufacturer_by_addr(mac: str) -> str:
+    if re.findall("[\w]{2}:[\w]{2}:[\w]{2}:[\w]{2}:[\w]{2}:[\w]{2}", mac):
+        return MacLookup().lookup(mac)
+    else:
+        return "<unknown>"
+
+
+def parse_options():
+    parser = optparse.OptionParser()
+    parser.add_option("-p", "--port", dest="PORT", type="int", help="Port to scan on hosts")
+    parser.set_defaults(PORT=[22, 80])
+    return parser.parse_args()
 
 
 def main_threading():
-    ip_range = read_ip_range()
+    global port_to_scan
+
+    opts, args = parse_options()
+    ports = [opts.PORT] if isinstance(opts.PORT, int) else opts.PORT
+
+    ip_range = read_ip_range(args)
     print("Scanning...")
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        executor.map(check_ip_availability, ip_range)
+    for port in ports:
+        port_to_scan = port
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            executor.map(process, ip_range)
 
-    if available_ip:
-        print("\nHost\t\tstatus")
-        for ip in sorted(available_ip):
-            print(f"{Colors.OKGREEN}{ip}\tok {Colors.ENDC}")
+    if hosts:
+        print("\nHost\t\tPorts\t\tName\t\t\tMAC\t\t\tManufacturer\t\tStatus")
+        for host in sorted(hosts):
+            print(host)
     else:
         print(f"\n{Colors.FAIL}Thera are not available hosts {Colors.ENDC}")
     print()
