@@ -93,7 +93,7 @@ def get_host_info(ip: IPv4Address):
             pass
         host.mac = get_mac_by_addr(ip)
         host.manufacturer = get_manufacturer_by_addr(host.mac)
-        host.ports.append(port_to_scan)
+        host.ports.add(port_to_scan)
         host.status = "ok"
 
         return host
@@ -135,7 +135,7 @@ def main_threading():
             executor.map(process, ip_range)
 
     if hosts:
-        print("\nHost\t\tPorts\t\tName\t\t\tMAC\t\t\tManufacturer\t\tStatus")
+        print("\nHost\t\tPort\t\tName\t\t\tMAC\t\t\tManufacturer\t\tStatus")
         for host in sorted(hosts):
             print(host)
     else:
