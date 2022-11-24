@@ -9,5 +9,6 @@ fi
 
 pip3 install get-mac mac-vendor-lookup
 
-sudo ln -s "`pwd`/ipscanner.py" "/usr/bin/ipscanner"
-
+user=`whoami`
+ipscanner_path=`find "/home/$user" -name ipscanner.py`
+sudo ln -s $ipscanner_path "/usr/bin/ipscanner"
