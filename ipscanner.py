@@ -12,6 +12,7 @@ from mac_vendor_lookup import MacLookup
 from Hostinfo import Hostinfo
 
 hosts = set()
+is_continuous = False
 port_to_scan = 22
 
 
@@ -79,7 +80,13 @@ def is_ip_available(ip: IPv4Address) -> bool:
 
 def process(ip: IPv4Address):
     try:
-        hosts.add(get_host_info(ip))
+        if is_continuous:
+            host = get_host_info(ip)
+            if host not in hosts:
+                host.print()
+                hosts.add(host)
+        else:
+            hosts.add(get_host_info(ip))
     except:
         pass
 
@@ -116,15 +123,17 @@ def get_manufacturer_by_addr(mac: str) -> str:
 def parse_options():
     parser = optparse.OptionParser()
     parser.add_option("-p", "--port", dest="PORT", type="int", help="Port to scan on hosts")
+    parser.add_option("-c", "--continuous", dest="is_continuous", action="store_true", help="continuous print")
     parser.set_defaults(PORT=[22, 80])
     return parser.parse_args()
 
 
 def main_threading():
-    global port_to_scan
+    global port_to_scan, is_continuous
 
     opts, args = parse_options()
     ports = [opts.PORT] if isinstance(opts.PORT, int) else opts.PORT
+    is_continuous = opts.is_continuous
 
     ip_range = read_ip_range(args)
     print("Scanning...")
@@ -134,13 +143,14 @@ def main_threading():
         with ThreadPoolExecutor(max_workers=20) as executor:
             executor.map(process, ip_range)
 
-    if hosts:
-        print("\nHost\t\tPort\t\tName\t\t\tMAC\t\t\tManufacturer\t\tStatus")
-        for host in sorted(hosts):
-            print(host)
-    else:
-        print(f"\n{Colors.FAIL}Thera are not available hosts {Colors.ENDC}")
-    print()
+    if not is_continuous:
+        if hosts:
+            print("\n\033[95mHost\t\tPort\t\tName\t\t\tMAC\t\t\tManufacturer\t\tStatus\033[0m")
+            for host in sorted(hosts):
+                print(host)
+        else:
+            print(f"\n{Colors.FAIL}Thera are not available hosts {Colors.ENDC}")
+        print()
 
 
 if __name__ == '__main__':
